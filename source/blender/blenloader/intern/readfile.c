@@ -196,10 +196,6 @@ static BHead *find_bhead_from_code_name(FileData *fd, const short idcode, const 
 static BHead *find_bhead_from_idname(FileData *fd, const char *idname);
 static bool library_link_idcode_needs_tag_check(const short idcode, const int flag);
 
-#ifdef USE_COLLECTION_COMPAT_28
-static void expand_scene_collection(BlendExpander *expander, SceneCollection *sc);
-#endif
-
 typedef struct BHeadN {
   struct BHeadN *next, *prev;
 #ifdef USE_BHEAD_READ_ON_DEMAND
@@ -2212,7 +2208,6 @@ static void link_glob_list(FileData *fd, ListBase *lb) /* for glob data */
  * \{ */
 
 static void lib_link_id(BlendLibReader *reader, ID *id);
-static void lib_link_collection(BlendLibReader *reader, Collection *collection);
 
 static void lib_link_id_embedded_id(BlendLibReader *reader, ID *id)
 {
@@ -2228,7 +2223,7 @@ static void lib_link_id_embedded_id(BlendLibReader *reader, ID *id)
     Scene *scene = (Scene *)id;
     if (scene->master_collection != NULL) {
       lib_link_id(reader, &scene->master_collection->id);
-      lib_link_collection(reader, scene->master_collection);
+      BKE_collection_blend_read_lib(reader, scene->master_collection);
     }
   }
 }
@@ -2275,7 +2270,6 @@ static void direct_link_id_override_property_cb(BlendDataReader *reader, void *d
 
 static void direct_link_id_common(
     BlendDataReader *reader, Library *current_library, ID *id, ID *id_old, const int tag);
-static void direct_link_collection(BlendDataReader *reader, Collection *collection);
 
 static void direct_link_id_embedded_id(BlendDataReader *reader,
                                        Library *current_library,
@@ -2303,7 +2297,7 @@ static void direct_link_id_embedded_id(BlendDataReader *reader,
                             &scene->master_collection->id,
                             id_old != NULL ? &((Scene *)id_old)->master_collection->id : NULL,
                             0);
-      direct_link_collection(reader, scene->master_collection);
+      BKE_collection_blend_read_data(reader, scene->master_collection);
     }
   }
 }
@@ -4407,7 +4401,6 @@ static void expand_doit_library(void *fdhandle, Main *mainvar, void *old)
 static BLOExpandDoitCallback expand_doit;
 
 static void expand_id(BlendExpander *expander, ID *id);
-static void expand_collection(BlendExpander *expander, Collection *collection);
 
 static void expand_id_embedded_id(BlendExpander *expander, ID *id)
 {
@@ -4422,7 +4415,7 @@ static void expand_id_embedded_id(BlendExpander *expander, ID *id)
     Scene *scene = (Scene *)id;
     if (scene->master_collection != NULL) {
       expand_id(expander, &scene->master_collection->id);
-      expand_collection(expander, scene->master_collection);
+      BKE_collection_blend_read_expand(expander, scene->master_collection);
     }
   }
 }
