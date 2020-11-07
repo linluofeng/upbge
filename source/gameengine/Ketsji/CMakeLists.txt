@@ -56,8 +56,8 @@ set(INC
   ../../blender/python/generic
   ../../blender/python/mathutils
   ../../blender/python/intern
-  ../../blender/render/extern/include
-  ../../blender/render/intern/include
+  ../../blender/render/
+  ../../blender/render/intern/
   ../../blender/windowmanager
   ../../blender/windowmanager/xr
   ../../blender/windowmanager/xr/intern

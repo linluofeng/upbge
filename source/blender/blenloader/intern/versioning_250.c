@@ -75,9 +75,10 @@
 #include "BKE_pointcache.h"
 #include "BKE_sca.h"
 #include "BKE_screen.h"
-#include "BKE_sequencer.h"
 #include "BKE_sound.h"
 #include "BKE_texture.h"
+
+#include "SEQ_sequencer.h"
 
 #include "NOD_socket.h"
 
@@ -268,7 +269,7 @@ static void area_add_window_regions(ScrArea *area, SpaceLink *sl, ListBase *lb)
     /* and we split view3d */
     switch (sl->spacetype) {
       case SPACE_VIEW3D:
-        blo_do_versions_view3d_split_250((View3D *)sl, lb);
+        BKE_screen_view3d_do_versions_250((View3D *)sl, lb);
         break;
 
       case SPACE_OUTLINER: {
@@ -1225,7 +1226,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *bmain)
         if (md->type == eModifierType_Cloth) {
           ClothModifierData *clmd = (ClothModifierData *)md;
           if (clmd->sim_parms->velocity_smooth < 0.01f) {
-            clmd->sim_parms->velocity_smooth = 0.f;
+            clmd->sim_parms->velocity_smooth = 0.0f;
           }
         }
       }
@@ -1560,9 +1561,9 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *bmain)
         while (node) {
           if (node->type == CMP_NODE_COLORBALANCE) {
             NodeColorBalance *n = (NodeColorBalance *)node->storage;
-            n->lift[0] += 1.f;
-            n->lift[1] += 1.f;
-            n->lift[2] += 1.f;
+            n->lift[0] += 1.0f;
+            n->lift[1] += 1.0f;
+            n->lift[2] += 1.0f;
           }
           node = node->next;
         }
@@ -1575,9 +1576,9 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *bmain)
       while (node) {
         if (node->type == CMP_NODE_COLORBALANCE) {
           NodeColorBalance *n = (NodeColorBalance *)node->storage;
-          n->lift[0] += 1.f;
-          n->lift[1] += 1.f;
-          n->lift[2] += 1.f;
+          n->lift[0] += 1.0f;
+          n->lift[1] += 1.0f;
+          n->lift[2] += 1.0f;
         }
 
         node = node->next;
@@ -1895,7 +1896,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *bmain)
       }
 
       part->flag &= ~PART_HAIR_REGROW; /* this was a deprecated flag before */
-      part->kink_amp_clump = 1.f;      /* keep old files looking similar */
+      part->kink_amp_clump = 1.0f;     /* keep old files looking similar */
     }
 
     for (screen = bmain->screens.first; screen; screen = screen->id.next) {

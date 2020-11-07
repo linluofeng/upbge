@@ -373,7 +373,6 @@ CcdPhysicsEnvironment::CcdPhysicsEnvironment(PHY_SolverType solverType,
       m_cullingTree(nullptr),
       m_numIterations(10),
       m_numTimeSubSteps(1),
-      m_ccdMode(0),
       m_solverType(PHY_SOLVER_NONE),
       m_deactivationTime(2.0f),
       m_linearDeactivationThreshold(0.8f),
@@ -977,14 +976,23 @@ void CcdPhysicsEnvironment::SetDeactivationAngularTreshold(float angTresh)
   }
 }
 
+void CcdPhysicsEnvironment::SetERPNonContact(float erp)
+{
+  m_dynamicsWorld->getSolverInfo().m_erp = erp;
+}
+
+void CcdPhysicsEnvironment::SetERPContact(float erp2)
+{
+  m_dynamicsWorld->getSolverInfo().m_erp2 = erp2;
+}
+
+void CcdPhysicsEnvironment::SetCFM(float cfm)
+{
+  m_dynamicsWorld->getSolverInfo().m_globalCfm = cfm;
+}
 void CcdPhysicsEnvironment::SetContactBreakingTreshold(float contactBreakingTreshold)
 {
   m_contactBreakingThreshold = contactBreakingTreshold;
-}
-
-void CcdPhysicsEnvironment::SetCcdMode(int ccdMode)
-{
-  m_ccdMode = ccdMode;
 }
 
 void CcdPhysicsEnvironment::SetSolverSorConstant(float sor)
@@ -999,16 +1007,6 @@ void CcdPhysicsEnvironment::SetSolverTau(float tau)
 void CcdPhysicsEnvironment::SetSolverDamping(float damping)
 {
   m_dynamicsWorld->getSolverInfo().m_damping = damping;
-}
-
-void CcdPhysicsEnvironment::SetLinearAirDamping(float damping)
-{
-  // gLinearAirDamping = damping;
-}
-
-void CcdPhysicsEnvironment::SetUseEpa(bool epa)
-{
-  // gUseEpa = epa;
 }
 
 void CcdPhysicsEnvironment::SetSolverType(PHY_SolverType solverType)
@@ -2749,6 +2747,9 @@ CcdPhysicsEnvironment *CcdPhysicsEnvironment::Create(Scene *blenderscene, bool v
   ccdPhysEnv->SetDeactivationLinearTreshold(blenderscene->gm.lineardeactthreshold);
   ccdPhysEnv->SetDeactivationAngularTreshold(blenderscene->gm.angulardeactthreshold);
   ccdPhysEnv->SetDeactivationTime(blenderscene->gm.deactivationtime);
+  ccdPhysEnv->SetERPNonContact(blenderscene->gm.erp);
+  ccdPhysEnv->SetERPContact(blenderscene->gm.erp2);
+  ccdPhysEnv->SetCFM(blenderscene->gm.cfm);
 
   if (visualizePhysics)
     ccdPhysEnv->SetDebugMode(btIDebugDraw::DBG_DrawWireframe | btIDebugDraw::DBG_DrawAabb |
@@ -2826,6 +2827,9 @@ void CcdPhysicsEnvironment::ConvertObject(BL_BlenderSceneConverter *converter,
   ci.m_fallSpeed = isbulletchar ? shapeprops->m_fall_speed : 0.0f;
   ci.m_maxSlope = isbulletchar ? blenderobject->max_slope : 0.0f;
   ci.m_maxJumps = isbulletchar ? shapeprops->m_max_jumps : 0;
+
+  ci.m_ccd_motion_threshold = (isbulletdyna || isbulletrigidbody) ? shapeprops->m_ccd_motion_threshold : 0.0;
+  ci.m_ccd_swept_sphere_radius = (isbulletdyna || isbulletrigidbody) ? shapeprops->m_ccd_swept_sphere_radius : 0.0;
 
   // mmm, for now, take this for the size of the dynamicobject
   // Blender uses inertia for radius of dynamic object
@@ -3004,7 +3008,7 @@ void CcdPhysicsEnvironment::ConvertObject(BL_BlenderSceneConverter *converter,
     }
     case OB_BOUND_CAPSULE: {
       shapeInfo->m_radius = MT_max(bounds_extends[0], bounds_extends[1]);
-      shapeInfo->m_height = 2.0f * bounds_extends[2];
+      shapeInfo->m_height = 2.0f * (bounds_extends[2] - shapeInfo->m_radius);
       if (shapeInfo->m_height < 0.0f)
         shapeInfo->m_height = 0.0f;
       shapeInfo->m_shapeType = PHY_SHAPE_CAPSULE;
@@ -3213,6 +3217,11 @@ void CcdPhysicsEnvironment::ConvertObject(BL_BlenderSceneConverter *converter,
 
       if (rbody && (blenderobject->gameflag & OB_COLLISION_RESPONSE) != 0) {
         rbody->setActivationState(DISABLE_DEACTIVATION);
+      }
+
+      if (blenderobject->gameflag2 & OB_CCD_RIGID_BODY) {
+        rbody->setCcdMotionThreshold(ci.m_ccd_motion_threshold);
+        rbody->setCcdSweptSphereRadius(ci.m_ccd_swept_sphere_radius);
       }
     }
   }

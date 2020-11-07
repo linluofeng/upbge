@@ -26,7 +26,11 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_C_COMPILER_ID MATCHES "Clang")
 endif()
 
 # Use double precision to make simulations of small objects stable.
-add_definitions(-DBT_USE_DOUBLE_PRECISION)
+# UPBGE - to recover double precision uncomment this definition, intern/rigidbody/CMakeLists.txt one
+# and source/gameengine/Physics/Bullet/CMakeLists.txt one.
+# Double precision is slower than float one but it will increase the precision in
+# open worlds games bigger than 10Km.
+#add_definitions(-DBT_USE_DOUBLE_PRECISION)
 
 set(INC
   .
@@ -425,7 +429,7 @@ set(LIB
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   # needed for gcc 4.6+
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fpermissive")
+  string(APPEND CMAKE_CXX_FLAGS " -fpermissive")
 endif()
 
 if(MSVC)

@@ -215,4 +215,22 @@ void blo_do_versions_upbge(FileData *fd, Library *lib, Main *main)
       }
     }
   }
+
+  if (!MAIN_VERSION_UPBGE_ATLEAST(main, 30, 1)) {
+    if (!DNA_struct_elem_find(fd->filesdna, "Object", "float", "ccd_motion_threshold")) {
+      for (Object *ob = main->objects.first; ob; ob = ob->id.next) {
+        ob->ccd_motion_threshold = 1.0f;
+        ob->ccd_swept_sphere_radius = 0.9f;
+      }
+    }
+  }
+  if (!MAIN_VERSION_UPBGE_ATLEAST(main, 30, 2)) {
+    if (!DNA_struct_elem_find(fd->filesdna, "GameData", "float", "erp")) {
+      for (Scene *scene = main->scenes.first; scene; scene = scene->id.next) {
+        scene->gm.erp = 0.2f;
+        scene->gm.erp2 = 0.8f;
+        scene->gm.cfm = 0.0f;
+      }
+    }
+  }
 }

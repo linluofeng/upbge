@@ -781,7 +781,7 @@ bool ED_object_editmode_enter_ex(Main *bmain, Scene *scene, Object *ob, int flag
 
     WM_main_add_notifier(NC_SCENE | ND_MODE | NS_EDITMODE_LATTICE, scene);
   }
-  else if (ob->type == OB_SURF || ob->type == OB_CURVE) {
+  else if (ELEM(ob->type, OB_SURF, OB_CURVE)) {
     ok = 1;
     ED_curve_editnurb_make(ob);
 
@@ -2122,6 +2122,8 @@ static int game_physics_copy_exec(bContext *C, wmOperator *UNUSED(op))
 
       ob_iter->col_group = ob->col_group;
       ob_iter->col_mask = ob->col_mask;
+      ob_iter->ccd_motion_threshold = ob->ccd_motion_threshold;
+      ob_iter->ccd_swept_sphere_radius = ob->ccd_swept_sphere_radius;
     }
   }
   CTX_DATA_END;

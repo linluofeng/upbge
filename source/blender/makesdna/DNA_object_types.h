@@ -474,6 +474,10 @@ typedef struct Object {
   float fhdist, xyfrict;
   short dynamode, _pad51[3];
 
+  /* rigid body ccd */
+  float ccd_motion_threshold;
+  float ccd_swept_sphere_radius;
+
   /********End of Game engine***********/
 
 } Object;
@@ -604,7 +608,7 @@ enum {
 
 /* (short) transflag */
 enum {
-  OB_TRANSFLAG_UNUSED_0 = 1 << 0, /* cleared */
+  OB_TRANSFORM_ADJUST_ROOT_PARENT_FOR_VIEW_LOCK = 1 << 0,
   OB_TRANSFLAG_UNUSED_1 = 1 << 1, /* cleared */
   OB_NEG_SCALE = 1 << 2,
   OB_TRANSFLAG_UNUSED_3 = 1 << 3, /* cleared */
@@ -772,6 +776,7 @@ enum {
   OB_LOCK_RIGID_BODY_X_ROT_AXIS = 1 << 5,
   OB_LOCK_RIGID_BODY_Y_ROT_AXIS = 1 << 6,
   OB_LOCK_RIGID_BODY_Z_ROT_AXIS = 1 << 7,
+  OB_CCD_RIGID_BODY = 1 << 8,
 
   /*	OB_LIFE     = OB_PROP | OB_DYNAMIC | OB_ACTOR | OB_MAINACTOR | OB_CHILD, */
 };

@@ -35,10 +35,16 @@ extern "C" {
 
 struct BLI_Iterator;
 struct Base;
+struct BlendDataReader;
+struct BlendExpander;
+struct BlendLibReader;
+struct BlendWriter;
 struct Collection;
+struct Library;
 struct Main;
 struct Object;
 struct Scene;
+struct SceneCollection;
 struct ViewLayer;
 
 typedef struct CollectionParent {

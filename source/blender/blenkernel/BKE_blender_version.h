@@ -45,11 +45,11 @@ extern "C" {
 
 /* Blender file format version. */
 #define BLENDER_FILE_VERSION BLENDER_VERSION
-#define BLENDER_FILE_SUBVERSION 1
+#define BLENDER_FILE_SUBVERSION 3
 
 /* UPBGE file format version. */
 #define UPBGE_FILE_VERSION UPBGE_VERSION
-#define UPBGE_FILE_SUBVERSION 1
+#define UPBGE_FILE_SUBVERSION 3
 
 /* Minimum Blender version that supports reading file written with the current
  * version. Older Blender versions will test this and show a warning if the file

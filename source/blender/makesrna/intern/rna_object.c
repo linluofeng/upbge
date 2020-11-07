@@ -1453,6 +1453,7 @@ static int rna_GameObjectSettings_physics_type_get(PointerRNA *ptr)
     if (!ob->bsoft) {
       ob->bsoft = bsbNew();
       ob->bsoft->margin = 0.1f; // not set in bsbNew
+      ob->bsoft->collisionflags |= OB_BSB_COL_CL_RS;
     }
   }
 
@@ -1530,6 +1531,7 @@ static void rna_GameObjectSettings_physics_type_set(PointerRNA *ptr, int value)
       if (!ob->bsoft) {
         ob->bsoft = bsbNew();
         ob->bsoft->margin = 0.1f;  // not set in bsbNew
+        ob->bsoft->collisionflags |= OB_BSB_COL_CL_RS;
       }
       break;
   }
@@ -2929,6 +2931,30 @@ static void rna_def_object_game_settings(BlenderRNA *brna)
   RNA_def_property_boolean_sdna(prop, NULL, "scaflag", OB_SHOWSTATE);
   RNA_def_property_ui_text(prop, "States", "Show state panel");
   RNA_def_property_ui_icon(prop, ICON_DISCLOSURE_TRI_RIGHT, 1);
+
+  /* rigid body ccd settings */
+  prop = RNA_def_property(srna, "use_ccd_rigid_body", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(prop, NULL, "gameflag2", OB_CCD_RIGID_BODY);
+  RNA_def_property_ui_text(
+      prop, "Continuous Collision Detection", "Enable Continuous Collision Detection for the rigid body");
+
+  prop = RNA_def_property(srna, "ccd_motion_threshold", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "ccd_motion_threshold");
+  RNA_def_property_range(prop, 0, 100);
+  RNA_def_property_ui_range(prop, 0.0, 100.0, 10, 2);
+  RNA_def_property_float_default(prop, 1.0f);
+  RNA_def_property_ui_text(prop, "Motion threshold",
+                           "Sets the delta of movement that has to happen in one"
+                           " physics tick to trigger the continuous motion detection");
+
+  prop = RNA_def_property(srna, "ccd_swept_sphere_radius", PROP_FLOAT, PROP_NONE);
+  RNA_def_property_float_sdna(prop, NULL, "ccd_swept_sphere_radius");
+  RNA_def_property_range(prop, 0, 100);
+  RNA_def_property_ui_range(prop, 0.0, 10.0, 10, 2);
+  RNA_def_property_float_default(prop, 0.9f);
+  RNA_def_property_ui_text(prop, "Swept Sphere Radius",
+                           "The radius of the sphere that is used to check for "
+                           "possible collisions when ccd is actived");
 }
 
 static void rna_def_object_constraints(BlenderRNA *brna, PropertyRNA *cprop)
@@ -3471,6 +3497,15 @@ static void rna_def_object(BlenderRNA *brna)
   RNA_def_property_ui_text(
       prop, "Parent Bone", "Name of parent bone in case of a bone parenting relation");
   RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_dependency_update");
+
+  prop = RNA_def_property(srna, "use_camera_lock_parent", PROP_BOOLEAN, PROP_NONE);
+  RNA_def_property_boolean_sdna(
+      prop, NULL, "transflag", OB_TRANSFORM_ADJUST_ROOT_PARENT_FOR_VIEW_LOCK);
+  RNA_def_property_ui_text(prop,
+                           "Camera Parent Lock",
+                           "View Lock 3D viewport camera transformation affects the object's "
+                           "parent instead");
+  RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, "rna_Object_internal_update");
 
   /* slow parenting */
   /* XXX: evil old crap */

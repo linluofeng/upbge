@@ -93,10 +93,11 @@
 #include "BKE_report.h"
 #include "BKE_rigidbody.h"
 #include "BKE_screen.h"
-#include "BKE_sequencer.h"
 #include "BKE_studiolight.h"
 #include "BKE_unit.h"
 #include "BKE_workspace.h"
+
+#include "SEQ_sequencer.h"
 
 /* Only for IMB_BlendMode */
 #include "IMB_imbuf.h"
@@ -1812,8 +1813,8 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
       sce->gm.stereomode = STEREO_ANAGLYPH;
       sce->gm.eyeseparation = 0.10;
 
-      sce->gm.xplay = 640;
-      sce->gm.yplay = 480;
+      sce->gm.xplay = 1280;
+      sce->gm.yplay = 720;
       sce->gm.freqplay = 60;
       sce->gm.depth = 32;
 
@@ -1825,10 +1826,13 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
       sce->gm.maxlogicstep = 5;
       sce->gm.physubstep = 1;
       sce->gm.maxphystep = 5;
-	  sce->gm.timeScale = 1.0f;
+      sce->gm.timeScale = 1.0f;
       sce->gm.lineardeactthreshold = 0.8f;
       sce->gm.angulardeactthreshold = 1.0f;
       sce->gm.deactivationtime = 2.0f;
+      sce->gm.erp = 0.2f;
+      sce->gm.erp2 = 0.8f;
+      sce->gm.cfm = 0.0f;
 
       sce->gm.obstacleSimulation = OBSTSIMULATION_NONE;
       sce->gm.levelHeight = 2.f;
@@ -1885,6 +1889,12 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
       ob->col_mask = 0xffff;
       ob->preview = NULL;
       ob->duplicator_visibility_flag = OB_DUPLI_FLAG_VIEWPORT | OB_DUPLI_FLAG_RENDER;
+      ob->ccd_motion_threshold = 1.0f;
+      ob->ccd_swept_sphere_radius = 0.9f;
+      if (ob->bsoft) {
+        ob->bsoft->margin = 0.1f;
+        ob->bsoft->collisionflags |= OB_BSB_COL_CL_RS;
+      }
     }
   }
   if (DNA_struct_elem_find(fd->filesdna, "Scene", "GameData", "gm") &&
@@ -2206,7 +2216,7 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
   if (!MAIN_VERSION_ATLEAST(bmain, 280, 8)) {
     /* Blender Internal removal */
     for (Scene *scene = bmain->scenes.first; scene; scene = scene->id.next) {
-      if (STREQ(scene->r.engine, "BLENDER_RENDER") || STREQ(scene->r.engine, "BLENDER_GAME")) {
+      if (STR_ELEM(scene->r.engine, "BLENDER_RENDER", "BLENDER_GAME")) {
         BLI_strncpy(scene->r.engine, RE_engine_id_BLENDER_EEVEE, sizeof(scene->r.engine));
       }
 
@@ -3526,7 +3536,7 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
             case SPACE_OUTLINER: {
               SpaceOutliner *space_outliner = (SpaceOutliner *)sl;
               space_outliner->filter &= ~(SO_FILTER_UNUSED_1 | SO_FILTER_UNUSED_5 |
-                                          SO_FILTER_UNUSED_12);
+                                          SO_FILTER_OB_STATE_SELECTABLE);
               space_outliner->storeflag &= ~(SO_TREESTORE_UNUSED_1);
               break;
             }
@@ -3600,7 +3610,7 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
 
     for (Object *ob = bmain->objects.first; ob; ob = ob->id.next) {
       ob->flag &= ~(OB_FLAG_UNUSED_11 | OB_FLAG_UNUSED_12);
-      ob->transflag &= ~(OB_TRANSFLAG_UNUSED_0 | OB_TRANSFLAG_UNUSED_1);
+      ob->transflag &= ~(OB_TRANSFORM_ADJUST_ROOT_PARENT_FOR_VIEW_LOCK | OB_TRANSFLAG_UNUSED_1);
       ob->shapeflag &= ~OB_SHAPE_FLAG_UNUSED_1;
     }
 
@@ -3769,8 +3779,8 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
         }
       }
 
-      ob->transflag &= ~(OB_TRANSFLAG_UNUSED_0 | OB_TRANSFLAG_UNUSED_1 | OB_TRANSFLAG_UNUSED_3 |
-                         OB_TRANSFLAG_UNUSED_6 | OB_TRANSFLAG_UNUSED_12);
+      ob->transflag &= ~(OB_TRANSFORM_ADJUST_ROOT_PARENT_FOR_VIEW_LOCK | OB_TRANSFLAG_UNUSED_1 |
+                         OB_TRANSFLAG_UNUSED_3 | OB_TRANSFLAG_UNUSED_6 | OB_TRANSFLAG_UNUSED_12);
 
       ob->nlaflag &= ~(OB_ADS_UNUSED_1 | OB_ADS_UNUSED_2);
     }
@@ -4185,8 +4195,7 @@ void blo_do_versions_280(FileData *fd, Library *lib, Main *bmain)
       if (STREQ(view_settings->view_transform, "Default")) {
         STRNCPY(view_settings->view_transform, "Standard");
       }
-      else if (STREQ(view_settings->view_transform, "RRT") ||
-               STREQ(view_settings->view_transform, "Film")) {
+      else if (STR_ELEM(view_settings->view_transform, "RRT", "Film")) {
         STRNCPY(view_settings->view_transform, "Filmic");
       }
       else if (STREQ(view_settings->view_transform, "Log")) {
